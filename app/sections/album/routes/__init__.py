@@ -1,4 +1,5 @@
 from functools import lru_cache
+from random import shuffle
 import time
 from typing import Sequence
 
@@ -24,6 +25,7 @@ async def list(request: Request) -> ListAlbumResponse:
         )
         for item in list_albums(access_token, get_ttl_hash(ttl_seconds=60))
     ]
+    shuffle(albums)
 
     return ListAlbumResponse(albums=albums)
 
