@@ -1,5 +1,6 @@
 from functools import lru_cache
 import time
+from typing import Sequence
 
 from fastapi import APIRouter, Request, HTTPException
 from spotipy import Spotify
@@ -28,7 +29,7 @@ async def list(request: Request) -> ListAlbumResponse:
 
 
 @lru_cache()
-def list_albums(access_token: str, ttl_hash: int) -> list[dict]:
+def list_albums(access_token: str, ttl_hash: int) -> Sequence[dict]:
     spotify = Spotify(auth=access_token)
     del ttl_hash
 
@@ -39,5 +40,5 @@ def list_albums(access_token: str, ttl_hash: int) -> list[dict]:
     return albums
 
 
-def get_ttl_hash(ttl_seconds: int):
+def get_ttl_hash(ttl_seconds: int) -> int:
     return round(time.time() / ttl_seconds)
