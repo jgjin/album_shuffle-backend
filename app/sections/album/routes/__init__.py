@@ -22,6 +22,7 @@ async def list(request: Request) -> ListAlbumResponse:
             image_url=item["album"]["images"][0]["url"],
             name=item["album"]["name"],
             artist=item["album"]["artists"][0]["name"],
+            spotify_url=item["album"]["external_urls"]["spotify"],
         )
         for item in list_albums(access_token, get_ttl_hash(ttl_seconds=(12 * 60 * 60)))
     ]
