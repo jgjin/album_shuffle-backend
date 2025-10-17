@@ -23,7 +23,7 @@ async def list(request: Request) -> ListAlbumResponse:
             name=item["album"]["name"],
             artist=item["album"]["artists"][0]["name"],
         )
-        for item in list_albums(access_token, get_ttl_hash(ttl_seconds=60))
+        for item in list_albums(access_token, get_ttl_hash(ttl_seconds=(12 * 60 * 60)))
     ]
     shuffle(albums)
 
