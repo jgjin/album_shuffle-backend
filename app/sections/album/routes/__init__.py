@@ -1,6 +1,7 @@
+import asyncio
+from itertools import chain
 from random import shuffle
 import time
-from typing import Sequence
 
 import aiohttp
 from async_lru import alru_cache
@@ -12,7 +13,7 @@ router = APIRouter()
 
 
 @router.get("/list")
-async def list(request: Request) -> ListAlbumResponse:
+async def list_albums(request: Request) -> ListAlbumResponse:
     access_token = request.session.get("access_token")
     if not access_token:
         raise HTTPException(status_code=401)
@@ -25,7 +26,9 @@ async def list(request: Request) -> ListAlbumResponse:
             spotify_url=item["album"]["external_urls"]["spotify"],
         )
         for item in (
-            await list_albums(access_token, get_ttl_hash(ttl_seconds=(24 * 60 * 60)))
+            await list_albums_cached(
+                access_token, get_ttl_hash(ttl_seconds=(24 * 60 * 60))
+            )
         )
     ]
     shuffle(albums)
@@ -34,26 +37,44 @@ async def list(request: Request) -> ListAlbumResponse:
 
 
 @alru_cache()
-async def list_albums(access_token: str, ttl_hash: int) -> Sequence[dict]:
+async def list_albums_cached(access_token: str, ttl_hash: int) -> list[dict]:
     del ttl_hash
 
-    albums = []
     async with aiohttp.ClientSession(
         headers={"Authorization": f"Bearer {access_token}"}
     ) as session:
-        while chunk := (await get_saved_albums(session, limit=20, offset=len(albums)))[
-            "items"
-        ]:
-            albums.extend(chunk)
+        limit = 50
+        total = await get_saved_albums_total(session)
 
-    return albums
+        saved_albums = await asyncio.gather(
+            *[
+                get_saved_albums_items(session, limit, offset)
+                for offset in range(0, total, limit)
+            ]
+        )
+
+        return list(chain.from_iterable(saved_albums))
+
+
+async def get_saved_albums_total(
+    session: aiohttp.ClientSession,
+) -> int:
+    return (await get_saved_albums(session, limit=1, offset=0))["total"]
+
+
+async def get_saved_albums_items(
+    session: aiohttp.ClientSession,
+    limit: int,
+    offset: int,
+) -> list[dict]:
+    return (await get_saved_albums(session, limit, offset))["items"]
 
 
 async def get_saved_albums(
     session: aiohttp.ClientSession,
     limit: int,
     offset: int,
-) -> Sequence[dict]:
+) -> dict:
     async with session.get(
         "https://api.spotify.com/v1/me/albums",
         params={
