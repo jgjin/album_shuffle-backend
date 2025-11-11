@@ -5,7 +5,9 @@ class Album(BaseModel):
     image_url: str
     name: str
     artist: str
-    spotify_url: str
+
+    album_url: str
+    artist_url: str
 
 
 class ListAlbumResponse(BaseModel):

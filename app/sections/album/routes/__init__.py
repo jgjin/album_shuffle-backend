@@ -23,7 +23,8 @@ async def list_albums(request: Request) -> ListAlbumResponse:
             image_url=item["album"]["images"][0]["url"],
             name=item["album"]["name"],
             artist=item["album"]["artists"][0]["name"],
-            spotify_url=item["album"]["external_urls"]["spotify"],
+            album_url=item["album"]["external_urls"]["spotify"],
+            artist_url=item["album"]["artists"][0]["external_urls"]["spotify"],
         )
         for item in (
             await list_albums_cached(
